@@ -1,0 +1,105 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: assets
+// Document ID: {assetId}
+// Fields:
+//   - id: string (required)
+//   - name: string (required)
+//   - location: string (required)
+//   - status: string (required)
+//   - lastAuditDate: string (optional)
+//
+// Collection: assets/{assetId}/audits
+// Document ID: {auditId}
+// Fields:
+//   - id: string (required)
+//   - wellId: string (required)
+//   - timestamp: string (required)
+//   - reportedProduction: number (required)
+//   - forensicProduction: number (required)
+//   - discrepancy: number (required)
+//   - confidenceScore: number (required)
+//   - source: string (optional)
+//   - validationEngine: string (optional)
+//   - notes: string (optional)
+//   - physicsCalculations: map (optional)
+//
+// Collection: assets/{assetId}/timeline
+// Document ID: {eventId}
+// Fields:
+//   - id: string (required)
+//   - wellId: string (required)
+//   - date: string (required)
+//   - type: string (required)
+//   - description: string (required)
+//   - truthLevel: string (required, enum: ["Public", "Forensic"])
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "kmck3772@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidAsset(data) {
+      return data.keys().hasAll(['id', 'name', 'location', 'status']) &&
+             data.id is string && data.name is string &&
+             data.location is string && data.status is string;
+    }
+
+    function isValidAudit(data) {
+      return data.keys().hasAll(['id', 'wellId', 'timestamp', 'reportedProduction', 'forensicProduction', 'discrepancy', 'confidenceScore']) &&
+             data.id is string && data.wellId is string &&
+             data.timestamp is string && data.reportedProduction is number &&
+             data.forensicProduction is number && data.discrepancy is number &&
+             data.confidenceScore is number;
+    }
+
+    function isValidTimelineEvent(data) {
+      return data.keys().hasAll(['id', 'wellId', 'date', 'type', 'description', 'truthLevel']) &&
+             data.id is string && data.wellId is string &&
+             data.date is string && data.type is string &&
+             data.description is string && data.truthLevel in ["Public", "Forensic"];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /assets/{assetId} {
+      allow read: if true; // Publicly viewable assets
+      allow write: if isAdmin() && isValidAsset(request.resource.data);
+
+      match /audits/{auditId} {
+        allow read: if true; // Publicly viewable audits
+        allow write: if isAdmin() && isValidAudit(request.resource.data);
+      }
+
+      match /timeline/{eventId} {
+        allow read: if true; // Publicly viewable timeline
+        allow write: if isAdmin() && isValidTimelineEvent(request.resource.data);
+      }
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}

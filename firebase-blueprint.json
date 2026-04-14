@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "Asset": {
+      "title": "Asset",
+      "description": "An oil & gas asset (e.g., Stella, Gannet).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "status": { "type": "string" },
+        "lastAuditDate": { "type": "string" }
+      },
+      "required": ["id", "name", "location", "status"]
+    },
+    "ForensicAudit": {
+      "title": "Forensic Audit",
+      "description": "A physics-anchored forensic audit result.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "wellId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "reportedProduction": { "type": "number" },
+        "forensicProduction": { "type": "number" },
+        "discrepancy": { "type": "number" },
+        "confidenceScore": { "type": "number" },
+        "source": { "type": "string" },
+        "validationEngine": { "type": "string" },
+        "notes": { "type": "string" },
+        "physicsCalculations": {
+          "type": "object",
+          "properties": {
+            "massBalanceDelta": { "type": "number" },
+            "sensorDriftFactor": { "type": "number" },
+            "pValue": { "type": "number" },
+            "iterations": { "type": "number" }
+          }
+        }
+      },
+      "required": ["id", "wellId", "timestamp", "reportedProduction", "forensicProduction", "discrepancy", "confidenceScore"]
+    },
+    "TimelineEvent": {
+      "title": "Timeline Event",
+      "description": "A significant event in the asset's history.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "wellId": { "type": "string" },
+        "date": { "type": "string" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "truthLevel": { "type": "string", "enum": ["Public", "Forensic"] }
+      },
+      "required": ["id", "wellId", "date", "type", "description", "truthLevel"]
+    }
+  },
+  "firestore": {
+    "/assets/{assetId}": {
+      "schema": "Asset",
+      "description": "Top-level asset information."
+    },
+    "/assets/{assetId}/audits/{auditId}": {
+      "schema": "ForensicAudit",
+      "description": "Historical audits for a specific asset."
+    },
+    "/assets/{assetId}/timeline/{eventId}": {
+      "schema": "TimelineEvent",
+      "description": "Timeline events for a specific asset."
+    }
+  }
+}

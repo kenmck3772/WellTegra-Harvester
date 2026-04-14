@@ -1,0 +1,5 @@
+{
+  "name": "WellTegra Forensic Dashboard",
+  "description": "A forensic, physics-anchored audit platform for oil & gas assets, integrating private forensic audits with public data firehoses.",
+  "requestFramePermissions": []
+}
